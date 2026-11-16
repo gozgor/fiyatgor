@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bilge Kırtasiye · Fiyat Gör</title>
+<meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chicle&family=Cuprum:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f1ea; --card:#fffdf8; --ink:#1d2430; --muted:#6b7280;
+    --brand:#2432b5; --accent:#bb1057; --ok:#23843a; --line:#e2dccf;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{background:#000;color:#fff;padding:10px 18px 12px;position:relative;
+    display:flex;align-items:center;justify-content:space-between}
+  header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;
+    background:linear-gradient(90deg,#2432b5 0 20%,#c28e4a 20% 40%,#d3d7d7 40% 60%,#c23a73 60% 80%,#31b142 80%)}
+  header h1{margin:0;font-family:"Cuprum",sans-serif;font-weight:700;font-size:26px;line-height:1;letter-spacing:.2px}
+  header h1 .hb{color:#fff;text-shadow:0 0 12px #bb1057,0 0 2px #bb1057}
+  header h1 .hk{color:#fff;text-shadow:0 0 12px #2432b5,0 0 2px #2432b5;font-size:20px}
+  header h1 i{font-style:italic}
+  header h1 small{display:block;font-family:system-ui,sans-serif;font-weight:500;font-size:12px;opacity:.75;margin-top:4px;letter-spacing:.5px}
+  header small{opacity:.8;font-size:12px}
+  main{max-width:560px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px;margin-bottom:14px}
+  .row{display:flex;gap:8px}
+  input{flex:1;font-size:18px;padding:12px 14px;border:2px solid var(--line);
+    border-radius:10px;background:#fff;color:var(--ink);min-width:0}
+  input:focus{outline:none;border-color:var(--brand)}
+  button{font-size:16px;padding:12px 16px;border:0;border-radius:10px;
+    background:var(--brand);color:#fff;cursor:pointer;white-space:nowrap}
+  button.cam{background:var(--accent);width:100%;margin-top:10px;font-size:18px;padding:14px}
+  button.ghost{background:transparent;color:var(--brand);border:1px solid var(--line)}
+  #reader{position:relative;width:100%;border-radius:10px;overflow:hidden;margin-top:10px;background:#000}
+  #reader video{display:block;width:100%;max-height:60vh;object-fit:cover}
+  .frame{position:absolute;left:5%;right:5%;top:25%;bottom:25%;border:3px solid rgba(255,255,255,.9);
+    border-radius:10px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);pointer-events:none;transition:border-color .15s}
+  .frame.hit{border-color:#3ddc84}
+  .frame::after{content:"";position:absolute;left:4%;right:4%;top:50%;height:3px;border-radius:2px;
+    background:#bb1057;box-shadow:0 0 10px #bb1057;animation:tara 1.6s ease-in-out infinite alternate}
+  @keyframes tara{from{top:12%}to{top:88%}}
+  .frame.hit::after{background:#3ddc84;box-shadow:0 0 12px #3ddc84;animation-play-state:paused}
+  .camtools{position:absolute;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;
+    padding:8px 10px;background:linear-gradient(transparent,rgba(0,0,0,.6));color:#fff;font-size:13px}
+  .camtools button{padding:8px 12px;font-size:14px;background:rgba(255,255,255,.2)}
+  .camtools input[type=range]{flex:1;border:0;padding:0;accent-color:#fff}
+  .camhint{position:absolute;left:0;right:0;top:8px;text-align:center;color:#fff;font-size:13px;
+    text-shadow:0 1px 2px #000}
+  .hidden{display:none !important}
+  .result .name{font-size:20px;font-weight:600;line-height:1.3}
+  .result .price{font-size:44px;font-weight:800;color:var(--ok);margin:8px 0 4px}
+  .result .price.none{font-size:22px;color:var(--muted);font-weight:600}
+  .result .meta{color:var(--muted);font-size:13px}
+  .notfound{color:var(--accent);font-weight:600;font-size:18px}
+  .list{list-style:none;margin:0;padding:0}
+  .list li{display:flex;justify-content:space-between;gap:10px;padding:10px 0;
+    border-top:1px solid var(--line);cursor:pointer}
+  .list li:first-child{border-top:0}
+  .list .p{font-weight:700;color:var(--ok);white-space:nowrap}
+  .status{color:var(--muted);font-size:13px;text-align:center}
+  .err{color:var(--accent)}
+  body{padding-bottom:84px}
+  button.add{background:var(--ok);width:100%;margin-top:12px;font-size:18px;padding:14px}
+  button.add:disabled{background:#b9c2bb;cursor:default}
+  .auto{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--muted)}
+  .auto input{flex:none;width:20px;height:20px}
+  .cart h2{margin:0 0 8px;font-size:18px;display:flex;justify-content:space-between;align-items:center}
+  .cart h2 button{font-size:13px;padding:6px 10px}
+  .item{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:10px 0;border-top:1px solid var(--line)}
+  .item:first-of-type{border-top:0}
+  .item .n{font-weight:600;line-height:1.25}
+  .item .t{font-weight:700;text-align:right;white-space:nowrap}
+  .item .u{color:var(--muted);font-size:13px}
+  .qty{display:flex;align-items:center;gap:6px;justify-self:end}
+  .qty button{padding:4px 0;width:34px;font-size:18px;background:#fff;color:var(--brand);border:1px solid var(--line)}
+  .qty span{min-width:26px;text-align:center;font-weight:700}
+  .total{display:flex;justify-content:space-between;font-size:22px;font-weight:800;
+    border-top:2px solid var(--ink);margin-top:6px;padding-top:10px}
+  .empty{color:var(--muted);text-align:center;padding:10px 0}
+  .note{color:var(--muted);font-size:12px;margin-top:8px}
+  .bar{position:fixed;left:0;right:0;bottom:0;background:var(--brand);color:#fff;
+    padding:12px 18px calc(12px + env(safe-area-inset-bottom));display:flex;
+    justify-content:space-between;align-items:center;font-size:17px;cursor:pointer;
+    box-shadow:0 -4px 16px rgba(0,0,0,.15)}
+  .bar b{font-size:22px}
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--ink);
+    color:#fff;padding:10px 16px;border-radius:999px;font-size:15px;opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.on{opacity:.92}
+  /* ============ OKUMA SONUC KARTI ============ */
+  #sheet{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;
+    justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+  #sheet.on{opacity:1;pointer-events:auto}
+  .sbox{width:100%;max-width:560px;background:var(--card);border-radius:22px 22px 0 0;
+    padding:22px 20px calc(20px + env(safe-area-inset-bottom));text-align:center;
+    transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.9,.3,1.1)}
+  #sheet.on .sbox{transform:none}
+  .sicon{width:64px;height:64px;border-radius:50%;margin:-54px auto 8px;display:flex;align-items:center;
+    justify-content:center;font-size:36px;color:#fff;border:5px solid var(--card);font-weight:800}
+  .sicon.ok{background:#23843a}.sicon.no{background:#d33a2c}
+  #sheet.on .sicon{animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes pop{from{transform:scale(.3)}to{transform:scale(1)}}
+  .sbaslik{font-size:14px;font-weight:700;letter-spacing:.5px;color:var(--muted);text-transform:uppercase}
+  .sad{font-size:21px;font-weight:700;margin:6px 0 2px;line-height:1.3}
+  .sfiyat{font-size:56px;font-weight:800;color:var(--ok);line-height:1.1;margin:6px 0}
+  .sfiyat.none{font-size:22px;color:var(--muted)}
+  .smeta{color:var(--muted);font-size:13px}
+  .sbilgi{margin-top:8px;font-size:14px;color:var(--brand);font-weight:600}
+  .sbtns{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+  .sbtns button{width:100%;font-size:19px;padding:16px;border-radius:14px}
+  .sbtns .sadd{background:var(--ok)}
+  .sbtns .snext{background:#fff;color:var(--brand);border:2px solid var(--brand)}
+  .sbar{height:4px;background:var(--ok);border-radius:2px;margin-top:14px;transform-origin:left}
+  .sbar.go{animation:sbar 1.8s linear forwards}
+  @keyframes sbar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+  /* ============ ACILIS ANIMASYONU (Bilge Kirtasiye amblemi) ============ */
+  #splash{position:fixed;inset:0;z-index:1000;background:#000;overflow:hidden;cursor:pointer;
+    background:radial-gradient(circle at 50% 42%,#14152a 0,#000 65%)}
+  #splash .sahne{position:absolute;left:50%;top:50%;width:400px;height:700px;
+    transform-origin:205px 457px;transform:translate(-205px,-457px) scale(var(--s,1))}
+  #splash .amb{position:absolute;left:233px;top:348px;width:0;height:0;opacity:0}
+  #splash .don{position:absolute;left:0;top:0;width:0;height:0}
+  .yap{position:absolute;left:-8px;top:-8px;line-height:normal;white-space:nowrap}
+  .yap.r{font-family:"Chicle",serif;font-size:110px;z-index:2;transform-origin:8px 8px}
+  .yap.b{font-family:"Chicle",serif;font-size:120px;color:#fff;z-index:1;transform-origin:6px 6px}
+  .nokta{position:absolute;border-radius:60%}
+  .nokta.r{left:-8px;top:-8px;width:16px;height:17px;background:#dfac6a;box-shadow:0 0 27px #dfac6a;z-index:3}
+  .nokta.b{left:-9px;top:-9px;width:18px;height:19px;background:#fff;box-shadow:0 0 27px #dfac6a;z-index:2}
+  #splash .yazi{position:absolute;left:70px;top:450px;opacity:0}
+  #splash .yazi1{position:absolute;left:70px;top:580px;opacity:0}
+  .cup{position:absolute;left:0;top:0;font-family:"Cuprum",sans-serif;font-weight:700;white-space:nowrap;line-height:normal}
+  .cup i{font-style:italic}
+  .bilge-r{font-size:128px;color:#bb1057;text-shadow:0 0 27px #bb1057;z-index:4}
+  .bilge-b{font-size:135px;color:#fffeff;text-shadow:0 0 27px #c23a73;z-index:3}
+  .kirt-r{font-size:70px;color:#2432b5;text-shadow:0 0 27px #2432b5;z-index:4}
+  .kirt-b{font-size:72px;color:#f6f7fb;text-shadow:0 0 27px #2432b5;z-index:3}
+  #splash .gec{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;
+    color:rgba(255,255,255,.45);font-size:12px;letter-spacing:1px;opacity:0;font-family:system-ui,sans-serif}
+
+  #splash.basla .amb{animation:ambGir 1.4s cubic-bezier(.17,.84,.3,1) forwards}
+  #splash.basla .don{animation:ambDon 2.2s ease-in-out 1.3s forwards}
+  #splash.basla .yazi{animation:solGir .9s cubic-bezier(.2,.9,.3,1.15) .75s forwards}
+  #splash.basla .yazi1{animation:sagGir .9s cubic-bezier(.2,.9,.3,1.15) .95s forwards}
+  #splash.basla .gec{animation:belir .6s ease 1.6s forwards}
+  @keyframes ambGir{
+    0%{opacity:0;transform:rotate(-540deg) rotateY(170deg) scale(.1)}
+    35%{opacity:1}
+    100%{opacity:1;transform:rotate(0) rotateY(0) scale(1)}}
+  @keyframes ambDon{from{transform:rotate(0) rotateY(0)}to{transform:rotate(72deg) rotateY(360deg)}}
+  @keyframes solGir{from{opacity:0;transform:translateX(-700px)}to{opacity:1;transform:none}}
+  @keyframes sagGir{from{opacity:0;transform:translateX(700px)}to{opacity:1;transform:none}}
+  @keyframes belir{to{opacity:1}}
+
+  /* Cikis: yazilar iki yana kayar, amblem buyuyerek kaybolur (orijinal animasyondaki gibi) */
+  #splash.cikis{animation:sonuk .75s ease-in .2s forwards;pointer-events:none}
+  #splash.cikis .yazi{opacity:1;animation:solCik .7s ease-in forwards}
+  #splash.cikis .yazi1{opacity:1;animation:sagCik .7s ease-in forwards}
+  #splash.cikis .amb{opacity:1;animation:ambCik .8s ease-in forwards}
+  #splash.cikis .gec{display:none}
+  @keyframes solCik{from{transform:none}to{transform:translateX(-1000px)}}
+  @keyframes sagCik{from{transform:none}to{transform:translateX(1000px)}}
+  @keyframes ambCik{from{transform:scale(1) rotate(0)}to{transform:scale(3) rotate(140deg);opacity:0}}
+  @keyframes sonuk{to{opacity:0}}
+  @media (prefers-reduced-motion: reduce){
+    #splash.basla .amb,#splash.basla .yazi,#splash.basla .yazi1{animation:belir .4s ease forwards}
+    #splash.basla .don{animation:none}
+  }
+</style>
+</head>
+<body>
+<!-- ============ ACILIS ANIMASYONU ============ -->
+<div id="splash" aria-hidden="true">
+  <div class="sahne">
+    <div class="amb"><div class="don">
+        <div class="yap b" style="text-shadow:0 0 27px #2432b5;transform:rotate(0deg)">1</div>
+        <div class="yap r" style="color:#2432b5;text-shadow:0 0 27px #2432b5;transform:rotate(0deg)">1</div>
+        <div class="yap b" style="text-shadow:0 0 27px #c28e4a;transform:rotate(72deg)">1</div>
+        <div class="yap r" style="color:#c28e4a;text-shadow:0 0 27px #c28e4a;transform:rotate(72deg)">1</div>
+        <div class="yap b" style="text-shadow:0 0 27px #d3d7d7;transform:rotate(144deg)">1</div>
+        <div class="yap r" style="color:#d3d7d7;text-shadow:0 0 27px #d3d7d7;transform:rotate(144deg)">1</div>
+        <div class="yap b" style="text-shadow:0 0 27px #c23a73;transform:rotate(216deg)">1</div>
+        <div class="yap r" style="color:#c23a73;text-shadow:0 0 27px #c23a73;transform:rotate(216deg)">1</div>
+        <div class="yap b" style="text-shadow:0 0 27px #31b142;transform:rotate(288deg)">1</div>
+        <div class="yap r" style="color:#31b142;text-shadow:0 0 27px #31b142;transform:rotate(288deg)">1</div>
+        <div class="nokta b"></div><div class="nokta r"></div>
+    </div></div>
+    <div class="yazi">
+      <div class="cup bilge-b">b<i>i</i>lge</div>
+      <div class="cup bilge-r">b<i>i</i>lge</div>
+    </div>
+    <div class="yazi1">
+      <div class="cup kirt-b">k<i>ı</i>rtas<i>i</i>ye</div>
+      <div class="cup kirt-r">k<i>ı</i>rtas<i>i</i>ye</div>
+    </div>
+  </div>
+  <div class="gec">GEÇMEK İÇİN DOKUNUN</div>
+</div>
+<script>
+(function () {
+  var sp = document.getElementById("splash");
+  // Ayni oturumda bir kez goster (sayfa yenilenince tekrar oynamasin)
+  var gordu = false;
+  try { gordu = sessionStorage.getItem("bk_intro") === "1"; sessionStorage.setItem("bk_intro", "1"); } catch (e) {}
+  if (gordu) { sp.remove(); return; }
+
+  function olcekle() {
+    var s = Math.min(1, (innerWidth - 24) / 340, (innerHeight - 60) / 440);
+    sp.querySelector(".sahne").style.setProperty("--s", s);
+  }
+  olcekle(); addEventListener("resize", olcekle);
+
+  var bitti = false;
+  function kapat() {
+    if (bitti) return; bitti = true;
+    sp.classList.add("cikis");
+    setTimeout(function () { sp.remove(); }, 1000);
+  }
+  sp.addEventListener("click", kapat);
+
+  function basla() {
+    if (sp.classList.contains("basla")) return;
+    sp.classList.add("basla");
+    setTimeout(kapat, 3300);
+  }
+  // Fontlar gelince basla (en fazla 1,2 sn bekle)
+  if (document.fonts && document.fonts.load) {
+    Promise.all([document.fonts.load('110px "Chicle"'), document.fonts.load('700 128px "Cuprum"'),
+                 document.fonts.load('italic 700 128px "Cuprum"')]).then(basla, basla);
+  }
+  setTimeout(basla, 1200);
+})();
+</script>
+<header>
+  <h1><span class="hb">b<i>i</i>lge</span> <span class="hk">k<i>ı</i>rtas<i>i</i>ye</span><small>FİYAT GÖR</small></h1>
+  <small id="count">Yükleniyor…</small>
+</header>
+
+<main>
+  <div class="card">
+    <form id="form" class="row" autocomplete="off">
+      <input id="q" inputmode="search" placeholder="Barkod okutun veya ürün adı yazın" aria-label="Barkod veya ürün adı">
+      <button type="submit">Ara</button>
+    </form>
+    <button id="camBtn" class="cam" type="button">📷 Kamerayla Barkod Okut</button>
+    <div id="reader" class="hidden">
+      <video id="video" playsinline muted autoplay></video>
+      <div class="frame" id="frame"></div>
+      <div class="camhint">Barkodu çerçeveye hizalayın (15–20 cm)</div>
+      <div class="camtools">
+        <button id="torchBtn" type="button" class="hidden">🔦 Işık</button>
+        <span id="zoomWrap" class="hidden" style="display:flex;flex:1;gap:6px;align-items:center">🔍 <input id="zoom" type="range"></span>
+      </div>
+    </div>
+    <button id="stopBtn" class="ghost hidden" type="button" style="width:100%;margin-top:8px">Kamerayı Kapat</button>
+    <label class="auto"><input type="checkbox" id="autoAdd"> Okutunca otomatik sepete ekle</label>
+  </div>
+
+  <div id="out"></div>
+
+  <div class="card cart" id="cart">
+    <h2>Sepetim <button class="ghost" id="clearBtn" type="button">Sepeti Boşalt</button></h2>
+    <div id="items"></div>
+    <div class="note">Bu tutar bilgi amaçlıdır. Kesin tutar kasada hesaplanır.</div>
+  </div>
+
+  <p class="status" id="status"></p>
+</main>
+
+<div class="bar" id="bar">
+  <span id="barCount">Sepet boş</span>
+  <b id="barTotal">₺0,00</b>
+</div>
+<div class="toast" id="toast"></div>
+<div id="sheet" role="dialog" aria-live="assertive"><div class="sbox" id="sbox"></div></div>
+
+<!-- Excel okuyucu (SheetJS) ve barkod okuyucu (ZXing-C++ / zxing-wasm), ucretsiz kutuphaneler -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/zxing-wasm@3.1.7/dist/iife/reader/index.js"></script>
+
+<script>
+// ================== AYARLAR ==================
+const DOSYA = "fiyatlar.xlsx";   // Wolvox'tan aktarilan Excel dosyasinin adi
+// =============================================
+
+const $ = id => document.getElementById(id);
+const index = new Map();   // barkod/stok kodu -> urun
+let urunler = [];
+
+const tl = new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" });
+
+// Barkodu sadelestir: bosluk/apostrof temizle, bastaki sifirlari at
+function anahtar(v) {
+  if (v === null || v === undefined || v === "") return "";
+  let s = typeof v === "number" ? v.toFixed(0) : String(v).trim().replace(/^'+/, "");
+  s = s.replace(/\s+/g, "");
+  if (/^\d+$/.test(s)) s = s.replace(/^0+/, "");
+  return s.toUpperCase();
+}
+const barkodMu = v => /^\d{6,14}$/.test(anahtar(v)) || (typeof v === "number" && v >= 1e5);
+
+function fiyatSayi(v) {
+  if (typeof v === "number") return v;
+  if (v === null || v === undefined) return NaN;
+  const s = String(v).replace(/[^\d,.\-]/g, "").replace(/\./g, "").replace(",", ".");
+  return s ? Number(s) : NaN;
+}
+
+const kucuk = s => String(s || "").toLocaleLowerCase("tr-TR");
+
+function excelOku(buf) {
+  const wb = XLSX.read(buf, { type: "array" });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+
+  // Baslik satirini bul (ilk 15 satirda "barkod" gecen satir)
+  let h = rows.findIndex((r, i) => i < 15 && r.some(c => /barkod/i.test(String(c || ""))));
+  if (h < 0) throw new Error("Excel'de 'Barkod' basligi bulunamadi.");
+  const bas = rows[h].map(c => kucuk(c).trim());
+  const bul = re => bas.findIndex(c => re.test(c));
+
+  const kKod = bul(/stok\s*kod/);
+  const kAd = bul(/stok\s*ad/);
+  const kBarkod = bas.map((c, i) => /barkod/.test(c) ? i : -1).filter(i => i >= 0);
+  let kFiyat = bul(/sat[ıi]ş\s*fiyat/);
+  if (kFiyat < 0) kFiyat = bul(/fiyat/);
+  if (kFiyat < 0) throw new Error("Excel'de 'Fiyat' basligi bulunamadi.");
+
+  const liste = [];
+  for (let i = h + 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || r.every(c => c === null || c === "")) continue;
+    const kod = kKod >= 0 ? r[kKod] : null;
+    const adHam = kAd >= 0 ? r[kAd] : null;
+    const barkodlar = [];
+    for (const k of kBarkod) if (r[k] !== null && r[k] !== "") barkodlar.push(anahtar(r[k]));
+    // Bazi urunlerde barkod "Stok Adi" kolonuna yazilmis: onu da barkod say
+    let ad = adHam;
+    if (adHam !== null && barkodMu(adHam)) { barkodlar.push(anahtar(adHam)); ad = null; }
+    const u = {
+      kod: kod === null ? "" : String(kod).trim(),
+      ad: ad === null ? "" : String(ad).trim(),
+      barkodlar: [...new Set(barkodlar.filter(Boolean))],
+      fiyat: fiyatSayi(r[kFiyat]),
+    };
+    if (!u.kod && !u.ad && !u.barkodlar.length) continue;
+    liste.push(u);
+  }
+  return liste;
+}
+
+function indeksle(liste) {
+  index.clear();
+  for (const u of liste) {
+    for (const b of u.barkodlar) if (!index.has(b)) index.set(b, u);
+    if (u.kod) { const k = anahtar(u.kod); if (!index.has(k)) index.set(k, u); }
+  }
+}
+
+function urunAdi(u) { return u.ad || (u.barkodlar[0] ? "Ürün " + u.barkodlar[0] : "") || u.kod; }
+
+function fiyatHtml(u) {
+  return (isFinite(u.fiyat) && u.fiyat > 0)
+    ? `<div class="price">${tl.format(u.fiyat)}</div>`
+    : `<div class="price none">Fiyat tanımlı değil</div>`;
+}
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
+
+const fiyatli = u => isFinite(u.fiyat) && u.fiyat > 0;
+
+function goster(u) {
+  $("out").innerHTML = `<div class="card result">
+    <div class="name">${esc(urunAdi(u))}</div>
+    ${fiyatHtml(u)}
+    <div class="meta">Stok kodu: ${esc(u.kod || "-")}${u.barkodlar.length ? " · Barkod: " + esc(u.barkodlar.join(", ")) : ""}</div>
+    <button class="add" id="addBtn" type="button" ${fiyatli(u) ? "" : "disabled"}>
+      ${fiyatli(u) ? "🛒 Sepete Ekle" : "Fiyatı olmayan ürün eklenemez"}</button>
+  </div>`;
+  if (fiyatli(u)) $("addBtn").onclick = () => sepeteEkle(u);
+}
+
+// ================== SEPET ==================
+// Sepet telefonun kendi hafizasinda tutulur; sayfa yenilense de kaybolmaz.
+let sepet = [];   // {anahtar, ad, fiyat, adet}
+const SEPET_KEY = "fiyatgor_sepet";
+function sepetKaydet() { try { localStorage.setItem(SEPET_KEY, JSON.stringify(sepet)); } catch (e) {} }
+function sepetYukle() { try { sepet = JSON.parse(localStorage.getItem(SEPET_KEY)) || []; } catch (e) { sepet = []; } }
+
+const urunAnahtari = u => u.kod ? "K:" + anahtar(u.kod) : "B:" + (u.barkodlar[0] || urunAdi(u));
+
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toast.z); toast.z = setTimeout(() => t.classList.remove("on"), 1600);
+}
+
+function sepeteEkle(u, sessiz) {
+  if (!fiyatli(u)) return;
+  const k = urunAnahtari(u);
+  const s = sepet.find(x => x.anahtar === k);
+  if (s) s.adet++;
+  else sepet.push({ anahtar: k, ad: urunAdi(u), fiyat: u.fiyat, adet: 1 });
+  sepetKaydet(); sepetCiz();
+  if (!sessiz) toast("Sepete eklendi: " + urunAdi(u));
+}
+const sepettekiAdet = u => (sepet.find(x => x.anahtar === urunAnahtari(u)) || {}).adet || 0;
+
+function adetDegistir(i, d) {
+  sepet[i].adet += d;
+  if (sepet[i].adet <= 0) sepet.splice(i, 1);
+  sepetKaydet(); sepetCiz();
+}
+
+function sepetCiz() {
+  const adet = sepet.reduce((a, x) => a + x.adet, 0);
+  const toplam = sepet.reduce((a, x) => a + x.adet * x.fiyat, 0);
+  $("barCount").textContent = adet ? `Sepet: ${adet} ürün` : "Sepet boş";
+  $("barTotal").textContent = tl.format(toplam);
+  $("clearBtn").classList.toggle("hidden", !sepet.length);
+  if (!sepet.length) { $("items").innerHTML = '<div class="empty">Sepetiniz boş. Barkod okutup “Sepete Ekle”ye basın.</div>'; return; }
+  $("items").innerHTML = sepet.map((x, i) => `
+    <div class="item">
+      <div class="n">${esc(x.ad)}</div>
+      <div class="t">${tl.format(x.adet * x.fiyat)}</div>
+      <div class="u">${x.adet} × ${tl.format(x.fiyat)}</div>
+      <div class="qty"><button data-i="${i}" data-d="-1" aria-label="Azalt">−</button><span>${x.adet}</span><button data-i="${i}" data-d="1" aria-label="Artır">+</button></div>
+    </div>`).join("") +
+    `<div class="total"><span>Toplam</span><span>${tl.format(toplam)}</span></div>`;
+  $("items").querySelectorAll(".qty button").forEach(b => b.onclick = () => adetDegistir(+b.dataset.i, +b.dataset.d));
+}
+
+// Sepet guncel listeye gore fiyatlari tazeler (fiyat degistiyse)
+function sepetTazele() {
+  for (const x of sepet) {
+    const u = index.get(x.anahtar.slice(2));
+    if (u && fiyatli(u)) { x.fiyat = u.fiyat; x.ad = urunAdi(u); }
+  }
+  sepetKaydet(); sepetCiz();
+}
+
+$("clearBtn").onclick = () => { if (confirm("Sepet boşaltılsın mı?")) { sepet = []; sepetKaydet(); sepetCiz(); } };
+$("bar").onclick = () => $("cart").scrollIntoView({ behavior: "smooth" });
+try { $("autoAdd").checked = localStorage.getItem("fiyatgor_auto") === "1"; } catch (e) {}
+$("autoAdd").onchange = e => { try { localStorage.setItem("fiyatgor_auto", e.target.checked ? "1" : "0"); } catch (x) {} };
+sepetYukle(); sepetCiz();
+
+function ara(metin) {
+  const q = String(metin || "").trim();
+  if (!q) return;
+  const k = anahtar(q);
+  const u = index.get(k);
+  if (u) { goster(u); return u; }
+
+  if (/^\d+$/.test(q)) {
+    $("out").innerHTML = `<div class="card"><div class="notfound">Bulunamadı: ${esc(q)}</div>
+      <div class="meta" style="color:var(--muted);margin-top:6px">Bu barkod listede yok.</div></div>`;
+    return false;
+  }
+  // Isimle arama
+  const kq = kucuk(q);
+  const bulunan = urunler.filter(x => kucuk(x.ad).includes(kq) || kucuk(x.kod).includes(kq)).slice(0, 30);
+  if (!bulunan.length) {
+    $("out").innerHTML = `<div class="card"><div class="notfound">“${esc(q)}” ile eşleşen ürün yok.</div></div>`;
+    return false;
+  }
+  if (bulunan.length === 1) { goster(bulunan[0]); return true; }
+  $("out").innerHTML = `<div class="card"><ul class="list">${bulunan.map((x, i) =>
+    `<li data-i="${i}"><span>${esc(urunAdi(x))}</span><span class="p">${isFinite(x.fiyat) && x.fiyat > 0 ? tl.format(x.fiyat) : "-"}</span></li>`
+  ).join("")}</ul></div>`;
+  $("out").querySelectorAll("li").forEach(li => li.onclick = () => goster(bulunan[+li.dataset.i]));
+  return true;
+}
+
+// ---------- Form / USB-Bluetooth barkod okuyucu ----------
+$("form").addEventListener("submit", e => {
+  e.preventDefault();
+  const r = ara($("q").value);
+  if (r && typeof r === "object" && $("autoAdd").checked) sepeteEkle(r);
+  $("q").select();   // bir sonraki okutma eskisinin yerine yazilsin
+});
+const dokunmatik = matchMedia("(pointer: coarse)").matches;
+if (!dokunmatik) $("q").focus();
+
+// ---------- Kamera ----------
+// ZXing-C++ (WebAssembly) ile okuma. Ters renkli (koyu zemin / acik cizgi) barkodlar icin
+// her ikinci karede goruntu tersine cevrilir.
+let akis = null, calisiyor = false, kare = 0, sonKod = "", sonZaman = 0;
+const tuval = document.createElement("canvas");
+const ctx = tuval.getContext("2d", { willReadFrequently: true });
+const OKUMA = {
+  formats: ["EAN13", "EAN8", "UPCA", "UPCE", "Code128", "Code39", "ITF", "QRCode"],
+  tryHarder: true, tryRotate: true, tryInvert: true, tryDownscale: true, maxNumberOfSymbols: 1,
+};
+
+// ---------- Ses: market kasasi gibi "bip" ----------
+let sesCtx = null;
+function sesHazirla() {   // tarayicilar sesi ancak bir dokunustan sonra acar
+  try { sesCtx = sesCtx || new (window.AudioContext || window.webkitAudioContext)(); sesCtx.resume(); } catch (e) {}
+}
+function bip(basarili) {
+  if (!sesCtx) return;
+  const notalar = basarili ? [[1760, 0, .12]] : [[330, 0, .15], [247, .18, .25]];
+  for (const [f, bas, sure] of notalar) {
+    const o = sesCtx.createOscillator(), g = sesCtx.createGain(), t = sesCtx.currentTime + bas;
+    o.type = basarili ? "square" : "sawtooth"; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.18, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + sure);
+    o.connect(g).connect(sesCtx.destination); o.start(t); o.stop(t + sure + 0.02);
+  }
+}
+
+// ---------- Sonuc karti ----------
+let kartAcik = false, kartZamanlayici = null;
+function kartKapat() {
+  clearTimeout(kartZamanlayici);
+  $("sheet").classList.remove("on");
+  kartAcik = false;
+  sonZaman = Date.now();   // ayni barkod kamerada duruyorsa hemen tekrar okumasin
+}
+function kartAc(html, otomatikKapat) {
+  $("sbox").innerHTML = html;
+  $("sheet").classList.add("on"); kartAcik = true;
+  clearTimeout(kartZamanlayici);
+  if (otomatikKapat) {
+    const bar = $("sbox").querySelector(".sbar"); if (bar) bar.classList.add("go");
+    kartZamanlayici = setTimeout(kartKapat, 1800);
+  }
+  const n = $("sbox").querySelector(".snext"); if (n) n.onclick = kartKapat;
+}
+$("sheet").addEventListener("click", e => { if (e.target.id === "sheet") kartKapat(); });
+
+function urunKarti(u, otomatikEklendi) {
+  const adet = sepettekiAdet(u);
+  const fiyatVar = fiyatli(u);
+  kartAc(`
+    <div class="sicon ok">✓</div>
+    <div class="sbaslik">${otomatikEklendi ? "Sepete eklendi" : "Ürün bulundu"}</div>
+    <div class="sad">${esc(urunAdi(u))}</div>
+    ${fiyatVar ? `<div class="sfiyat">${tl.format(u.fiyat)}</div>` : `<div class="sfiyat none">Fiyat tanımlı değil</div>`}
+    <div class="smeta">Barkod: ${esc(u.barkodlar[0] || u.kod)}</div>
+    ${adet ? `<div class="sbilgi">🛒 Sepetinizde ${adet} adet · Sepet toplamı ${$("barTotal").textContent}</div>` : ""}
+    ${otomatikEklendi ? `<div class="sbar"></div>` : `
+    <div class="sbtns">
+      ${fiyatVar ? `<button class="sadd" type="button">🛒 Sepete Ekle</button>` : ""}
+      <button class="snext" type="button">📷 Başka Ürün Okut</button>
+    </div>`}`, otomatikEklendi);
+  const a = $("sbox").querySelector(".sadd");
+  if (a) a.onclick = () => { sepeteEkle(u, true); urunKarti(u, true); };
+}
+
+function bulunamadiKarti(kod) {
+  kartAc(`
+    <div class="sicon no">✕</div>
+    <div class="sbaslik">Ürün bulunamadı</div>
+    <div class="sad">Bu barkod fiyat listesinde yok</div>
+    <div class="smeta">Barkod: ${esc(kod)}</div>
+    <div class="sbilgi" style="color:var(--muted)">Lütfen kasaya sorunuz.</div>
+    <div class="sbtns"><button class="snext" type="button">📷 Tekrar Dene</button></div>`);
+}
+
+function bulunduIsle(kod) {
+  const simdi = Date.now();
+  if (kartAcik) return;
+  if (kod === sonKod && simdi - sonZaman < 2500) return;   // ayni barkodu tekrar tekrar okuma
+  sonKod = kod; sonZaman = simdi;
+  $("frame").classList.add("hit"); setTimeout(() => $("frame").classList.remove("hit"), 500);
+  $("q").value = kod;
+  const u = index.get(anahtar(kod));
+  if (u) {
+    goster(u);                                   // asagidaki bilgi kartini da guncelle
+    bip(true); if (navigator.vibrate) navigator.vibrate(90);
+    const oto = $("autoAdd").checked && fiyatli(u);
+    if (oto) sepeteEkle(u, true);
+    urunKarti(u, oto);
+  } else {
+    ara(kod);
+    bip(false); if (navigator.vibrate) navigator.vibrate([70, 60, 70]);
+    bulunamadiKarti(kod);
+  }
+}
+
+async function kareOku() {
+  if (!calisiyor) return;
+  const v = $("video");
+  if (!kartAcik && v.readyState >= 2 && v.videoWidth) {
+    // Sadece cerceve bolgesini oku (ekranda gorunen alan + biraz pay)
+    const w = v.videoWidth, h = v.videoHeight;
+    const cw = Math.round(w * 0.92), ch = Math.round(h * 0.6);
+    const sx = Math.round((w - cw) / 2), sy = Math.round((h - ch) / 2);
+    const olcek = Math.min(1, 1280 / cw);
+    tuval.width = Math.round(cw * olcek); tuval.height = Math.round(ch * olcek);
+    ctx.drawImage(v, sx, sy, cw, ch, 0, 0, tuval.width, tuval.height);
+    const img = ctx.getImageData(0, 0, tuval.width, tuval.height);
+    if (kare++ % 2 === 1) {            // ters renkli barkodlar icin
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) { d[i] = 255 - d[i]; d[i + 1] = 255 - d[i + 1]; d[i + 2] = 255 - d[i + 2]; }
+    }
+    try {
+      const r = await ZXingWASM.readBarcodes(img, OKUMA);
+      const ok = r.find(x => x.isValid && x.text);
+      if (ok) bulunduIsle(ok.text);
+    } catch (e) { console.warn(e); }
+  }
+  if (calisiyor) setTimeout(kareOku, 40);
+}
+
+async function kameraAc() {
+  if (!window.ZXingWASM) { alert("Barkod kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edin."); return; }
+  if (!navigator.mediaDevices?.getUserMedia) { alert("Bu tarayıcı kamerayı desteklemiyor (site HTTPS olmalı)."); return; }
+  try {
+    akis = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+    });
+  } catch (e) {
+    alert("Kamera açılamadı: " + e.message + "\n\nTarayıcıya kamera izni verdiğinizden emin olun.");
+    return;
+  }
+  $("reader").classList.remove("hidden");
+  $("stopBtn").classList.remove("hidden");
+  $("camBtn").classList.add("hidden");
+  const v = $("video"); v.srcObject = akis; try { await v.play(); } catch (e) {}
+
+  // Telefon destekliyorsa: surekli odak, isik (flas) ve yakinlastirma
+  const iz = akis.getVideoTracks()[0];
+  const yet = iz.getCapabilities ? iz.getCapabilities() : {};
+  try { if (yet.focusMode && yet.focusMode.includes("continuous")) await iz.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } catch (e) {}
+  if (yet.torch) {
+    let acik = false;
+    $("torchBtn").classList.remove("hidden");
+    $("torchBtn").onclick = async () => { acik = !acik; try { await iz.applyConstraints({ advanced: [{ torch: acik }] }); } catch (e) {} };
+  }
+  if (yet.zoom && yet.zoom.max > yet.zoom.min) {
+    const z = $("zoom");
+    z.min = yet.zoom.min; z.max = Math.min(yet.zoom.max, 5); z.step = yet.zoom.step || 0.1;
+    z.value = Math.min(Math.max(yet.zoom.min, 1.5), z.max);   // kucuk barkodlar icin hafif yakinlastir
+    $("zoomWrap").classList.remove("hidden");
+    const uygula = () => iz.applyConstraints({ advanced: [{ zoom: +z.value }] }).catch(() => {});
+    z.oninput = uygula; uygula();
+  }
+  calisiyor = true; kare = 0; kareOku();
+  $("reader").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function kameraKapat() {
+  calisiyor = false; kartKapat();
+  if (akis) akis.getTracks().forEach(t => t.stop());
+  akis = null; $("video").srcObject = null;
+  $("reader").classList.add("hidden");
+  $("stopBtn").classList.add("hidden");
+  $("torchBtn").classList.add("hidden");
+  $("zoomWrap").classList.add("hidden");
+  $("camBtn").classList.remove("hidden");
+}
+$("camBtn").onclick = () => { sesHazirla(); kameraAc(); };
+$("stopBtn").onclick = kameraKapat;
+document.addEventListener("visibilitychange", () => { if (document.hidden && akis) kameraKapat(); });
+
+// ---------- Veriyi yukle ----------
+(async () => {
+  try {
+    if (!window.XLSX) throw new Error("Excel kütüphanesi yüklenemedi (internet bağlantısı?)");
+    const res = await fetch(DOSYA + "?v=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error(DOSYA + " bulunamadı (" + res.status + ")");
+    const tarih = res.headers.get("last-modified");
+    urunler = excelOku(await res.arrayBuffer());
+    indeksle(urunler);
+    sepetTazele();
+    $("count").textContent = urunler.length.toLocaleString("tr-TR") + " ürün";
+    $("status").textContent = tarih
+      ? "Fiyat listesi güncelleme: " + new Date(tarih).toLocaleString("tr-TR")
+      : "";
+  } catch (e) {
+    $("count").textContent = "Hata";
+    $("status").innerHTML = '<span class="err">Liste yüklenemedi: ' + esc(e.message) + "</span>";
+  }
+})();
+</script>
+</body>
+</html>
