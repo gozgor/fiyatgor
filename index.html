@@ -51,6 +51,12 @@
     padding:8px 10px;background:linear-gradient(transparent,rgba(0,0,0,.6));color:#fff;font-size:13px}
   .camtools button{padding:8px 12px;font-size:14px;background:rgba(255,255,255,.2)}
   .camtools input[type=range]{flex:1;border:0;padding:0;accent-color:#fff}
+  .camtools{flex-wrap:wrap}
+  .odak{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border:2px solid #ffd54a;border-radius:10px;
+    pointer-events:none;animation:odak .8s ease-out forwards}
+  @keyframes odak{from{transform:scale(1.5);opacity:1}70%{transform:scale(1);opacity:1}to{opacity:0}}
+  .camhint.ipucu{top:auto;bottom:56px;background:rgba(0,0,0,.65);padding:8px 10px;margin:0 10px;border-radius:10px;font-size:13px;line-height:1.4}
+  button.foto{width:100%;margin-top:8px;font-size:15px;padding:11px;background:#fff;color:var(--brand);border:1px solid var(--line)}
   .camhint{position:absolute;left:0;right:0;top:8px;text-align:center;color:#fff;font-size:13px;
     text-shadow:0 1px 2px #000}
   .hidden{display:none !important}
@@ -251,13 +257,18 @@
     <div id="reader" class="hidden">
       <video id="video" playsinline muted autoplay></video>
       <div class="frame" id="frame"></div>
-      <div class="camhint">Barkodu çerçeveye hizalayın (15–20 cm)</div>
+      <div class="camhint">Barkodu çerçeveye hizalayın · netleştirmek için ekrana dokunun</div>
+      <div class="camhint ipucu hidden" id="ipucu">Okumuyor mu? Telefonu biraz <b>uzaklaştırıp</b> 🔍 ile yaklaştırın, 🔄 ile <b>kamerayı değiştirin</b> ya da aşağıdan <b>📸 fotoğrafla okutun</b>.</div>
       <div class="camtools">
         <button id="torchBtn" type="button" class="hidden">🔦 Işık</button>
-        <span id="zoomWrap" class="hidden" style="display:flex;flex:1;gap:6px;align-items:center">🔍 <input id="zoom" type="range"></span>
+        <button id="switchBtn" type="button" class="hidden">🔄 Kamera</button>
+        <span id="zoomWrap" class="hidden" style="display:flex;flex:1;gap:6px;align-items:center;min-width:120px">🔍 <input id="zoom" type="range"></span>
+        <span id="focusWrap" class="hidden" style="display:flex;flex:1;gap:6px;align-items:center;min-width:120px">🎯 <input id="focus" type="range"></span>
       </div>
     </div>
     <button id="stopBtn" class="ghost hidden" type="button" style="width:100%;margin-top:8px">Kamerayı Kapat</button>
+    <button id="fotoBtn" class="foto" type="button">📸 Kamera okumuyorsa: Fotoğraf çekerek okut</button>
+    <input id="fotoInput" type="file" accept="image/*" capture="environment" hidden>
     <label class="auto"><input type="checkbox" id="autoAdd"> Okutunca otomatik sepete ekle</label>
   </div>
 
@@ -568,6 +579,7 @@ function bulunduIsle(kod) {
   if (kartAcik) return;
   if (kod === sonKod && simdi - sonZaman < 2500) return;   // ayni barkodu tekrar tekrar okuma
   sonKod = kod; sonZaman = simdi;
+  if (calisiyor) ipucuKur();
   $("frame").classList.add("hit"); setTimeout(() => $("frame").classList.remove("hit"), 500);
   $("q").value = kod;
   const u = index.get(anahtar(kod));
@@ -609,27 +621,53 @@ async function kareOku() {
   if (calisiyor) setTimeout(kareOku, 40);
 }
 
-async function kameraAc() {
-  if (!window.ZXingWASM) { alert("Barkod kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edin."); return; }
-  if (!navigator.mediaDevices?.getUserMedia) { alert("Bu tarayıcı kamerayı desteklemiyor (site HTTPS olmalı)."); return; }
-  try {
-    akis = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-    });
-  } catch (e) {
-    alert("Kamera açılamadı: " + e.message + "\n\nTarayıcıya kamera izni verdiğinizden emin olun.");
-    return;
-  }
-  $("reader").classList.remove("hidden");
-  $("stopBtn").classList.remove("hidden");
-  $("camBtn").classList.add("hidden");
-  const v = $("video"); v.srcObject = akis; try { await v.play(); } catch (e) {}
+// ---------- Kamera secimi ----------
+// Bazi telefonlar varsayilan olarak yakina odaklanamayan genis aci (ultra wide) kamerayi aciyor.
+// Kullanici 🔄 ile arka kameralar arasinda gecebilir; secim bu cihazda hatirlanir.
+const KAMERA_KEY = "fiyatgor_kamera";
+let arkaKameralar = [], ipucuZamani = null;
+const kayitliKamera = () => { try { return localStorage.getItem(KAMERA_KEY); } catch (e) { return null; } };
+const kameraKaydet = id => { try { localStorage.setItem(KAMERA_KEY, id); } catch (e) {} };
 
-  // Telefon destekliyorsa: surekli odak, isik (flas) ve yakinlastirma
+async function arkaKameralariBul() {
+  const hepsi = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === "videoinput");
+  let arka = hepsi.filter(d => /back|rear|arka|environment/i.test(d.label));
+  if (!arka.length) arka = hepsi.filter(d => !/front|ön|user|facetime/i.test(d.label));
+  return arka.length ? arka : hepsi;
+}
+
+function akisAc(deviceId) {
+  const boyut = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+  return navigator.mediaDevices.getUserMedia({
+    audio: false,
+    video: deviceId ? { deviceId: { exact: deviceId }, ...boyut } : { facingMode: { ideal: "environment" }, ...boyut },
+  });
+}
+
+function ipucuKur() {
+  clearTimeout(ipucuZamani);
+  $("ipucu").classList.add("hidden");
+  ipucuZamani = setTimeout(() => { if (calisiyor && !kartAcik) $("ipucu").classList.remove("hidden"); }, 9000);
+}
+
+// Odak, isik, yakinlastirma: telefon ne destekliyorsa onu ac
+async function izAyarla() {
   const iz = akis.getVideoTracks()[0];
   const yet = iz.getCapabilities ? iz.getCapabilities() : {};
-  try { if (yet.focusMode && yet.focusMode.includes("continuous")) await iz.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } catch (e) {}
+  ["torchBtn", "zoomWrap", "focusWrap"].forEach(id => $(id).classList.add("hidden"));
+
+  const surekli = yet.focusMode && yet.focusMode.includes("continuous");
+  try { if (surekli) await iz.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } catch (e) {}
+
+  // Otomatik odagi olmayan cihazlar icin elle odak surgusu
+  if (!surekli && yet.focusDistance && yet.focusMode && yet.focusMode.includes("manual")) {
+    const f = $("focus");
+    f.min = yet.focusDistance.min; f.max = yet.focusDistance.max; f.step = yet.focusDistance.step || 0.01;
+    f.value = Math.min(f.max, Math.max(f.min, 0.2));
+    $("focusWrap").classList.remove("hidden");
+    const uygula = () => iz.applyConstraints({ advanced: [{ focusMode: "manual", focusDistance: +f.value }] }).catch(() => {});
+    f.oninput = uygula; uygula();
+  }
   if (yet.torch) {
     let acik = false;
     $("torchBtn").classList.remove("hidden");
@@ -643,18 +681,115 @@ async function kameraAc() {
     const uygula = () => iz.applyConstraints({ advanced: [{ zoom: +z.value }] }).catch(() => {});
     z.oninput = uygula; uygula();
   }
-  calisiyor = true; kare = 0; kareOku();
+  return { iz, yet };
+}
+
+async function kameraAc() {
+  if (!window.ZXingWASM) { alert("Barkod kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edin."); return; }
+  if (!navigator.mediaDevices?.getUserMedia) { alert("Bu tarayıcı kamerayı desteklemiyor (site HTTPS olmalı)."); return; }
+  const kayitli = kayitliKamera();
+  try {
+    try { akis = await akisAc(kayitli); }
+    catch (e) { if (!kayitli) throw e; akis = await akisAc(null); }
+  } catch (e) {
+    alert("Kamera açılamadı: " + e.message + "\n\nTarayıcıya kamera izni verdiğinizden emin olun.");
+    return;
+  }
+  try { arkaKameralar = await arkaKameralariBul(); } catch (e) { arkaKameralar = []; }
+
+  // Android: ilk seferde ultra genis kamera acildiysa ana kameraya ("camera2 0") gec
+  if (!kayitli) {
+    const etiket = akis.getVideoTracks()[0].label || "";
+    const ana = arkaKameralar.find(d => /camera2 0\b/.test(d.label));
+    if (ana && /camera2 [1-9]/.test(etiket)) {
+      try { akis.getTracks().forEach(t => t.stop()); akis = await akisAc(ana.deviceId); } catch (e) { akis = await akisAc(null); }
+    }
+  }
+  $("switchBtn").classList.toggle("hidden", arkaKameralar.length < 2);
+
+  $("reader").classList.remove("hidden");
+  $("stopBtn").classList.remove("hidden");
+  $("camBtn").classList.add("hidden");
+  const v = $("video"); v.srcObject = akis; try { await v.play(); } catch (e) {}
+  await izAyarla();
+  calisiyor = true; kare = 0; kareOku(); ipucuKur();
   $("reader").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+// 🔄 Arka kameralar arasinda gecis
+$("switchBtn").onclick = async () => {
+  if (!akis || arkaKameralar.length < 2) return;
+  const simdiki = akis.getVideoTracks()[0].getSettings().deviceId;
+  const i = Math.max(0, arkaKameralar.findIndex(d => d.deviceId === simdiki));
+  const sonraki = arkaKameralar[(i + 1) % arkaKameralar.length];
+  akis.getTracks().forEach(t => t.stop());
+  try { akis = await akisAc(sonraki.deviceId); } catch (e) { akis = await akisAc(null); }
+  kameraKaydet(akis.getVideoTracks()[0].getSettings().deviceId || sonraki.deviceId);
+  $("video").srcObject = akis; try { await $("video").play(); } catch (e) {}
+  await izAyarla(); ipucuKur();
+  toast(`Kamera ${((i + 1) % arkaKameralar.length) + 1} / ${arkaKameralar.length}`);
+};
+
+// Ekrana dokununca o noktaya odaklan
+$("video").addEventListener("click", async e => {
+  if (!akis) return;
+  const r = $("video").getBoundingClientRect();
+  const halka = document.createElement("div");
+  halka.className = "odak";
+  halka.style.left = (e.clientX - r.left) + "px"; halka.style.top = (e.clientY - r.top) + "px";
+  $("reader").appendChild(halka); setTimeout(() => halka.remove(), 900);
+  const iz = akis.getVideoTracks()[0];
+  const yet = iz.getCapabilities ? iz.getCapabilities() : {};
+  const nokta = { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+  try {
+    const adim = {};
+    if (yet.pointsOfInterest !== undefined || "pointsOfInterest" in yet) adim.pointsOfInterest = [nokta];
+    if (yet.focusMode && yet.focusMode.includes("single-shot")) adim.focusMode = "single-shot";
+    else if (yet.focusMode && yet.focusMode.includes("continuous")) adim.focusMode = "continuous";
+    if (Object.keys(adim).length) await iz.applyConstraints({ advanced: [adim] });
+    // tek seferlik odaktan sonra surekli odaga geri don
+    if (adim.focusMode === "single-shot" && yet.focusMode.includes("continuous"))
+      setTimeout(() => iz.applyConstraints({ advanced: [{ focusMode: "continuous" }] }).catch(() => {}), 1500);
+  } catch (err) {}
+});
+
+// ---------- 📸 Fotograf cekerek okutma (telefonun kendi kamera uygulamasi; odak sorunu olmaz) ----------
+$("fotoBtn").onclick = () => { sesHazirla(); $("fotoInput").value = ""; $("fotoInput").click(); };
+$("fotoInput").addEventListener("change", async () => {
+  const dosya = $("fotoInput").files[0];
+  if (!dosya) return;
+  if (!window.ZXingWASM) { alert("Barkod kütüphanesi yüklenemedi."); return; }
+  toast("Fotoğraf okunuyor…");
+  try {
+    const bmp = await createImageBitmap(dosya);
+    const olcek = Math.min(1, 2400 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * olcek); c.height = Math.round(bmp.height * olcek);
+    const cx = c.getContext("2d", { willReadFrequently: true });
+    cx.drawImage(bmp, 0, 0, c.width, c.height);
+    const img = cx.getImageData(0, 0, c.width, c.height);
+    let r = await ZXingWASM.readBarcodes(img, OKUMA);
+    let ok = r.find(x => x.isValid && x.text);
+    if (!ok) {   // ters renkli barkod olabilir
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) { d[i] = 255 - d[i]; d[i + 1] = 255 - d[i + 1]; d[i + 2] = 255 - d[i + 2]; }
+      r = await ZXingWASM.readBarcodes(img, OKUMA);
+      ok = r.find(x => x.isValid && x.text);
+    }
+    if (ok) { sonKod = ""; bulunduIsle(ok.text); }
+    else { bip(false); toast("Barkod okunamadı. Barkoda biraz yaklaşıp net bir fotoğraf çekin."); }
+  } catch (e) {
+    toast("Fotoğraf okunamadı: " + e.message);
+  }
+});
+
 function kameraKapat() {
-  calisiyor = false; kartKapat();
+  calisiyor = false; kartKapat(); clearTimeout(ipucuZamani);
   if (akis) akis.getTracks().forEach(t => t.stop());
   akis = null; $("video").srcObject = null;
   $("reader").classList.add("hidden");
   $("stopBtn").classList.add("hidden");
-  $("torchBtn").classList.add("hidden");
-  $("zoomWrap").classList.add("hidden");
+  ["torchBtn", "zoomWrap", "focusWrap", "switchBtn", "ipucu"].forEach(id => $(id).classList.add("hidden"));
   $("camBtn").classList.remove("hidden");
 }
 $("camBtn").onclick = () => { sesHazirla(); kameraAc(); };
