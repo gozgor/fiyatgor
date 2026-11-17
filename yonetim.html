@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Bilge Kırtasiye · Fiyat Listesi Yükle</title>
+<script>document.write('<script src="ayar.js?v=' + Date.now() + '"><\/script>');</script>
+<link href="https://fonts.googleapis.com/css2?family=Cuprum:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f4f1ea;--card:#fffdf8;--ink:#1d2430;--muted:#6b7280;--line:#e2dccf;--brand:#2432b5;--accent:#bb1057;--ok:#23843a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{background:#000;color:#fff;padding:10px 18px 12px;position:relative}
+  header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;
+    background:linear-gradient(90deg,#2432b5 0 20%,#c28e4a 20% 40%,#d3d7d7 40% 60%,#c23a73 60% 80%,#31b142 80%)}
+  header h1{margin:0;font-family:"Cuprum",sans-serif;font-weight:700;font-size:26px;line-height:1}
+  header h1 .hb{text-shadow:0 0 12px #bb1057,0 0 2px #bb1057}
+  header h1 .hk{text-shadow:0 0 12px #2432b5,0 0 2px #2432b5;font-size:20px}
+  header h1 i{font-style:italic}
+  header h1 small{display:block;font-family:system-ui,sans-serif;font-weight:500;font-size:12px;opacity:.75;margin-top:4px;letter-spacing:.5px}
+  main{max-width:640px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  h2{font-size:17px;margin:0 0 10px}
+  label{display:block;font-size:14px;color:var(--muted);margin:10px 0 6px}
+  input[type=password],input[type=file]{width:100%;font-size:16px;padding:12px;border:2px solid var(--line);border-radius:10px;background:#fff}
+  .satir{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;color:var(--muted)}
+  button{width:100%;font-size:18px;padding:14px;border:0;border-radius:12px;background:var(--brand);color:#fff;cursor:pointer;margin-top:14px}
+  button:disabled{opacity:.5;cursor:default}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+  td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600}
+  .ozet{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+  .ozet div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+  .ozet b{display:block;font-size:22px}
+  .ozet span{font-size:12px;color:var(--muted)}
+  .mesaj{margin-top:12px;font-weight:600}
+  .mesaj.ok{color:var(--ok)} .mesaj.hata{color:var(--accent)}
+  .not{font-size:13px;color:var(--muted);line-height:1.5}
+</style>
+</head>
+<body>
+<header><h1><span class="hb">b<i>i</i>lge</span> <span class="hk">k<i>ı</i>rtas<i>i</i>ye</span><small>FİYAT LİSTESİ YÜKLE (YÖNETİCİ)</small></h1></header>
+<main>
+  <div class="card">
+    <h2>1. Yönetici şifresi</h2>
+    <input type="password" id="sifre" placeholder="Cloudflare'de belirlediğiniz ADMIN_SIFRE" autocomplete="current-password">
+    <div class="satir"><input type="checkbox" id="hatirla"> <span>Bu bilgisayarda hatırla</span></div>
+  </div>
+
+  <div class="card">
+    <h2>2. Wolvox'tan aktardığınız Excel dosyası</h2>
+    <input type="file" id="dosya" accept=".xlsx,.xls,.csv">
+    <div id="onizleme"></div>
+    <button id="yukle" disabled>☁️ Fiyat Listesini Yükle</button>
+    <div id="mesaj" class="mesaj"></div>
+  </div>
+
+  <p class="not">Excel dosyası bu bilgisayarda okunur, sadece barkod, stok kodu, ürün adı ve satış fiyatı sunucuya gönderilir.
+    Dosya hiçbir yerde herkese açık durmaz. Yükledikten sonra yeni fiyatlar yaklaşık 1 dakika içinde tüm telefonlara yansır.</p>
+</main>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const API = String(window.FIYATGOR_API || "").replace(/\/+$/, "");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const kucuk = s => String(s || "").toLocaleLowerCase("tr-TR");
+let liste = [];
+
+try { const k = localStorage.getItem("bk_admin"); if (k) { $("sifre").value = k; $("hatirla").checked = true; } } catch (e) {}
+
+function anahtar(v) {
+  if (v === null || v === undefined || v === "") return "";
+  let s = typeof v === "number" ? v.toFixed(0) : String(v).trim().replace(/^'+/, "");
+  s = s.replace(/\s+/g, "");
+  if (/^\d+$/.test(s)) s = s.replace(/^0+/, "");
+  return s.toUpperCase();
+}
+const barkodMu = v => /^\d{6,14}$/.test(anahtar(v)) || (typeof v === "number" && v >= 1e5);
+function fiyatSayi(v) {
+  if (typeof v === "number") return v;
+  if (v === null || v === undefined) return NaN;
+  const s = String(v).replace(/[^\d,.\-]/g, "").replace(/\./g, "").replace(",", ".");
+  return s ? Number(s) : NaN;
+}
+
+// Wolvox stok listesi Excel'ini oku (Stok Kodu, Stok Adi, Barkodu, Satis Fiyati 1)
+function excelOku(buf) {
+  const wb = XLSX.read(buf, { type: "array" });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+  const h = rows.findIndex((r, i) => i < 15 && r.some(c => /barkod/i.test(String(c || ""))));
+  if (h < 0) throw new Error("Excel'de 'Barkod' başlığı bulunamadı.");
+  const bas = rows[h].map(c => kucuk(c).trim());
+  const bul = re => bas.findIndex(c => re.test(c));
+  const kKod = bul(/stok\s*kod/), kAd = bul(/stok\s*ad/);
+  const kBarkod = bas.map((c, i) => /barkod/.test(c) ? i : -1).filter(i => i >= 0);
+  let kFiyat = bul(/sat[ıi]ş\s*fiyat/); if (kFiyat < 0) kFiyat = bul(/fiyat/);
+  if (kFiyat < 0) throw new Error("Excel'de 'Fiyat' başlığı bulunamadı.");
+  const out = [];
+  for (let i = h + 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || r.every(c => c === null || c === "")) continue;
+    const kod = kKod >= 0 ? r[kKod] : null, adHam = kAd >= 0 ? r[kAd] : null;
+    const barkodlar = [];
+    for (const k of kBarkod) if (r[k] !== null && r[k] !== "") barkodlar.push(anahtar(r[k]));
+    let ad = adHam;
+    if (adHam !== null && barkodMu(adHam)) { barkodlar.push(anahtar(adHam)); ad = null; }   // barkodu "Stok Adi"na yazilmis urunler
+    const u = { kod: kod === null ? "" : String(kod).trim(), ad: ad === null ? "" : String(ad).trim(),
+                barkodlar: [...new Set(barkodlar.filter(Boolean))], fiyat: fiyatSayi(r[kFiyat]) };
+    if (!u.kod && !u.ad && !u.barkodlar.length) continue;
+    out.push(u);
+  }
+  return out;
+}
+
+$("dosya").addEventListener("change", async () => {
+  const f = $("dosya").files[0]; $("mesaj").textContent = ""; $("yukle").disabled = true; $("onizleme").innerHTML = "";
+  if (!f) return;
+  try {
+    liste = excelOku(await f.arrayBuffer());
+    const barkodsuz = liste.filter(u => !u.barkodlar.length).length;
+    const fiyatsiz = liste.filter(u => !(u.fiyat > 0)).length;
+    const tl = new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" });
+    $("onizleme").innerHTML = `<div class="ozet">
+        <div><b>${liste.length.toLocaleString("tr-TR")}</b><span>ürün</span></div>
+        <div><b>${barkodsuz.toLocaleString("tr-TR")}</b><span>barkodsuz</span></div>
+        <div><b>${fiyatsiz.toLocaleString("tr-TR")}</b><span>fiyatı 0 / boş</span></div></div>
+      <table><tr><th>Stok kodu</th><th>Ad</th><th>Barkod</th><th>Fiyat</th></tr>
+      ${liste.slice(0, 5).map(u => `<tr><td>${esc(u.kod)}</td><td>${esc(u.ad || "-")}</td><td>${esc(u.barkodlar.join(", "))}</td><td>${u.fiyat > 0 ? tl.format(u.fiyat) : "-"}</td></tr>`).join("")}
+      </table>`;
+    $("yukle").disabled = !liste.length;
+  } catch (e) {
+    $("mesaj").className = "mesaj hata"; $("mesaj").textContent = "Excel okunamadı: " + e.message;
+  }
+});
+
+$("yukle").onclick = async () => {
+  const sifre = $("sifre").value.trim();
+  if (!API) { $("mesaj").className = "mesaj hata"; $("mesaj").textContent = "ayar.js içinde sunucu adresi yok."; return; }
+  if (!sifre) { $("mesaj").className = "mesaj hata"; $("mesaj").textContent = "Yönetici şifresini girin."; return; }
+  $("yukle").disabled = true; $("mesaj").className = "mesaj"; $("mesaj").textContent = "Yükleniyor…";
+  try {
+    const r = await fetch(API + "/api/yukle", { method: "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Sifre": sifre }, body: JSON.stringify({ urunler: liste }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.hata === "sifre_yanlis" ? "Şifre yanlış." : (j.hata || ("Sunucu hatası " + r.status)));
+    try { $("hatirla").checked ? localStorage.setItem("bk_admin", sifre) : localStorage.removeItem("bk_admin"); } catch (e) {}
+    $("mesaj").className = "mesaj ok"; $("mesaj").textContent = `✓ ${j.adet.toLocaleString("tr-TR")} ürün yüklendi. Yeni fiyatlar 1 dakika içinde telefonlara yansır.`;
+  } catch (e) {
+    $("mesaj").className = "mesaj hata"; $("mesaj").textContent = "Yüklenemedi: " + e.message;
+  } finally { $("yukle").disabled = false; }
+};
+</script>
+</body>
+</html>
