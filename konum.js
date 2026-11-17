@@ -14,8 +14,8 @@
    ===================================================================== */
 
 const DUKKAN = {
-  enlem: null,        // ornek: 41.0082   (kurulum modunda cikan deger)
-  boylam: null,       // ornek: 28.9784
+  enlem: 40.027836,        // ornek: 41.0082   (kurulum modunda cikan deger)
+  boylam:27.047282,       // ornek: 28.9784
   yaricap: 30,        // metre - dukkanin merkezinden bu mesafeye kadar "dukkanda" sayilir
 };
 const GPS_PAYI = 20;    // GPS sapmasi icin en fazla bu kadar metre ek pay verilir (toplam sinir: 30 + 20 = 50 m)
