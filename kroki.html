@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bilge Kırtasiye · Mağaza Krokisi</title>
+<meta name="theme-color" content="#000000">
+<script>document.write('<script src="konum.js?v=' + Date.now() + '"><\/script>');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cuprum:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f1ea; --card:#fffdf8; --ink:#1d2430; --muted:#6b7280; --line:#e2dccf;
+    --brand:#2432b5; --accent:#bb1057;
+    --c-kirtasiye:#2432b5; --c-oyuncak:#31b142; --c-kitap:#c28e4a; --c-sanat:#c23a73; --c-ev:#7b8494; --c-hizmet:#3a3f4a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{background:#000;color:#fff;padding:10px 18px 12px;position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;
+    background:linear-gradient(90deg,#2432b5 0 20%,#c28e4a 20% 40%,#d3d7d7 40% 60%,#c23a73 60% 80%,#31b142 80%)}
+  header h1{margin:0;font-family:"Cuprum",sans-serif;font-weight:700;font-size:26px;line-height:1}
+  header h1 .hb{color:#fff;text-shadow:0 0 12px #bb1057,0 0 2px #bb1057}
+  header h1 .hk{color:#fff;text-shadow:0 0 12px #2432b5,0 0 2px #2432b5;font-size:20px}
+  header h1 i{font-style:italic}
+  header h1 small{display:block;font-family:system-ui,sans-serif;font-weight:500;font-size:12px;opacity:.75;margin-top:4px;letter-spacing:.5px}
+  header a{color:#fff;font-size:13px;text-decoration:none;border:1px solid rgba(255,255,255,.35);padding:7px 10px;border-radius:999px;white-space:nowrap}
+  main{max-width:820px;margin:0 auto;padding:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+  form{display:flex;gap:8px}
+  input{flex:1;min-width:0;font-size:17px;padding:12px 14px;border:2px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+  input:focus{outline:none;border-color:var(--brand)}
+  button{font-size:16px;padding:12px 16px;border:0;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .chip{font-size:14px;padding:7px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--ink);cursor:pointer}
+  .chip:active{transform:scale(.97)}
+  #sonuc{margin-top:10px;font-size:15px}
+  #sonuc .bos{color:var(--accent);font-weight:600}
+  #sonuc ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+  #sonuc li{padding:6px 10px;border-radius:8px;color:#fff;font-weight:600;font-size:14px;cursor:pointer}
+  .harita{padding:8px}
+  svg{width:100%;height:auto;display:block;touch-action:manipulation}
+  .zone rect{stroke:#fff;stroke-width:2;cursor:pointer;transition:opacity .25s}
+  .zone text{fill:#fff;font-weight:700;font-size:20px;pointer-events:none;text-anchor:middle;dominant-baseline:central;
+    paint-order:stroke;stroke:rgba(0,0,0,.3);stroke-width:3px}
+  .zone.ada rect{rx:6}
+  svg.aramada .zone{opacity:.22}
+  svg.aramada .zone.bulundu{opacity:1}
+  .zone.bulundu rect{stroke:#bb1057;stroke-width:6;animation:nabiz 1s ease-in-out infinite alternate}
+  @keyframes nabiz{from{stroke-width:3}to{stroke-width:9}}
+  .zone.secili rect{stroke:#000;stroke-width:5}
+  .zemin{fill:#fff;stroke:#1d2430;stroke-width:4}
+  .koridor{fill:#9aa1ad;font-size:22px;text-anchor:middle;font-style:italic}
+  .pin{animation:zipla .7s ease-in-out infinite alternate}
+  @keyframes zipla{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+  .lejant{display:flex;flex-wrap:wrap;gap:10px 16px;font-size:13px;color:var(--muted);padding:4px 6px 0}
+  .lejant span{display:inline-flex;align-items:center;gap:6px}
+  .lejant b{width:14px;height:14px;border-radius:4px;display:inline-block}
+  #detay h2{margin:0 0 4px;font-size:19px}
+  #detay .kat{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+  #detay ul{margin:8px 0 0;padding-left:20px;line-height:1.6}
+  .ipucu{color:var(--muted);font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="hb">b<i>i</i>lge</span> <span class="hk">k<i>ı</i>rtas<i>i</i>ye</span><small>MAĞAZA KROKİSİ</small></h1>
+  <a href="./">💰 Fiyat Gör</a>
+</header>
+
+<main>
+  <div class="card">
+    <form id="form" autocomplete="off">
+      <input id="q" inputmode="search" placeholder="Ne arıyorsunuz? (ör. matara, puzzle, boya)" aria-label="Ürün ara">
+      <button type="submit">Bul</button>
+    </form>
+    <div class="chips" id="chips"></div>
+    <div id="sonuc"></div>
+  </div>
+
+  <div class="card harita">
+    <svg id="plan" viewBox="0 0 1000 800" role="img" aria-label="Mağaza krokisi"></svg>
+    <div class="lejant" id="lejant"></div>
+  </div>
+
+  <div class="card" id="detay"><p class="ipucu" style="margin:0">Krokide bir bölgeye dokunun, orada neler olduğunu görün.</p></div>
+</main>
+
+<script>
+// =====================================================================
+//  KROKI VERISI — yerlesimi duzeltmek icin sadece bu listeyi degistirin.
+//  x, y: sol ust kose · w, h: genislik, yukseklik (krokinin boyutu 1000 x 800)
+//  Ust taraf = dukkanin arka duvari, alt taraf = giris / kasa tarafi
+// =====================================================================
+const KATEGORI = {
+  kirtasiye: { ad: "Kırtasiye", renk: "var(--c-kirtasiye)" },
+  sanat:     { ad: "Boya & Sanat", renk: "var(--c-sanat)" },
+  kitap:     { ad: "Kitap", renk: "var(--c-kitap)" },
+  oyuncak:   { ad: "Oyuncak", renk: "var(--c-oyuncak)" },
+  ev:        { ad: "Matara & Hediye", renk: "var(--c-ev)" },
+  hizmet:    { ad: "Hizmet", renk: "var(--c-hizmet)" },
+};
+
+const BOLGE = [
+  // ---------- SAG DUVAR (kalem kutulari) ----------
+  { id: "kalemkutu", ad: "Kalem Kutuları & Kalem Çantaları", kisa: "Kalem Kutuları", kat: "kirtasiye",
+    x: 930, y: 70, w: 70, h: 290,
+    icerik: ["Kalem kutuları", "Kalem çantaları", "Kalemlikler"],
+    anahtar: "kalem kutusu kalem çantası kalemlik çanta" },
+  { id: "defter", ad: "Defter, Elişi Kağıdı & Ambalaj Kağıdı", kisa: "Defter · Elişi", kat: "kirtasiye",
+    x: 930, y: 360, w: 70, h: 160,
+    icerik: ["Defterler", "Elişi ve desenli kağıtlar", "Rulo ambalaj kağıtları", "Dosyalar"],
+    anahtar: "defter elişi kağıdı desenli kağıt fon kağıdı rulo ambalaj kağıdı hediye paketi dosya" },
+  { id: "resimcanta", ad: "Resim Çantaları, Balon & Kurdele", kisa: "Resim Çantası", kat: "sanat",
+    x: 930, y: 520, w: 70, h: 140,
+    icerik: ["Resim / evrak çantaları", "Balonlar", "Kurdele ve süs ipleri", "Ponpon, şönil tel"],
+    anahtar: "resim çantası evrak çantası balon kurdele ponpon şönil tel süsleme parti" },
+  { id: "bayrak", ad: "Bayrak, Slime & Yapıştırıcılar", kisa: "Bayrak", kat: "kirtasiye",
+    x: 930, y: 660, w: 70, h: 100,
+    icerik: ["Türk bayrakları", "Slime ve oyun hamurları", "Yapıştırıcılar"],
+    anahtar: "bayrak türk bayrağı slime yapıştırıcı tutkal bubu" },
+
+  // ---------- ARKA DUVAR ----------
+  { id: "lego", ad: "LEGO & Oyuncaklar", kisa: "LEGO & Oyuncak", kat: "oyuncak",
+    x: 570, y: 0, w: 360, h: 70,
+    icerik: ["LEGO (City, Friends, Minecraft, Technic, Speed)", "Clementoni yapı setleri", "Oyun hamurları (Play-Doh, Fun Bino)"],
+    anahtar: "lego city friends minecraft technic clementoni yapı seti oyuncak oyun hamuru play-doh playdoh fun bino" },
+  { id: "fiyatgor", ad: "Fiyat Gör Cihazı", kisa: "Fiyat", kat: "hizmet",
+    x: 520, y: 0, w: 50, h: 70,
+    icerik: ["Barkod okutarak fiyat öğrenebilirsiniz"], anahtar: "fiyat gör fiyat öğren barkod" },
+  { id: "faber", ad: "Faber-Castell: Boya & Resim Malzemeleri", kisa: "Faber-Castell · Boya", kat: "sanat",
+    x: 200, y: 0, w: 320, h: 70,
+    icerik: ["Kuru boya, keçeli kalem", "Sulu boya, pastel boya, parmak boyası", "Fırçalar ve resim setleri", "Üst rafta: okul çantaları"],
+    anahtar: "faber castell boya kalemi kuru boya keçeli kalem sulu boya pastel boya parmak boyası guaj fırça resim seti okul çantası sırt çantası" },
+  { id: "fonkarton", ad: "Fon Kartonu & Hediye Kutuları", kisa: "Fon Kartonu", kat: "sanat",
+    x: 0, y: 0, w: 200, h: 70,
+    icerik: ["Fon kartonları (renkli, simli)", "EVA ve el işi kartonları", "Hediye kutuları"],
+    anahtar: "fon kartonu karton elişi kartonu simli karton eva hediye kutusu" },
+
+  // ---------- SOL DUVAR (matara, hobi) ----------
+  { id: "matara", ad: "Mataralar & Beslenme Kutuları", kisa: "Matara · Beslenme", kat: "ev",
+    x: 0, y: 70, w: 70, h: 280,
+    icerik: ["Mataralar, su şişeleri, termoslar", "Beslenme kutuları", "Üst rafta: hediye kutuları"],
+    anahtar: "matara su şişesi suluk termos beslenme kutusu beslenme çantası hediye kutusu" },
+  { id: "hobi", ad: "Hobi Malzemeleri", kisa: "Hobi", kat: "sanat",
+    x: 0, y: 350, w: 70, h: 130,
+    icerik: ["Ahşap mandal ve çubuklar", "Boncuklar", "El işi malzemeleri"],
+    anahtar: "hobi ahşap mandal boncuk keçe ip ahşap çubuk el işi" },
+  { id: "oyuncakraf", ad: "Oyuncaklar & Kutu Oyunları", kisa: "Oyuncak", kat: "oyuncak",
+    x: 0, y: 480, w: 70, h: 210,
+    icerik: ["Hot Wheels ve oyuncak arabalar", "Kutu oyunları, UNO", "Aktivite setleri"],
+    anahtar: "hot wheels kutu oyunu uno oyuncak su tabancası aktivite seti" },
+  { id: "led", ad: "LED Işıklar & Bebekler", kisa: "LED", kat: "ev", ada: true,
+    x: 83, y: 600, w: 72, h: 66,
+    icerik: ["Dekoratif LED ışıklar", "Polly Pocket bebekler"],
+    anahtar: "led ışık dekoratif ışık polly bebek" },
+
+  // ---------- ADA 1 (sag koridorun yaninda) ----------
+  { id: "zarf", ad: "Zarf Dosyalar (umix)", kisa: "Dosya", kat: "kirtasiye", ada: true,
+    x: 842, y: 84, w: 76, h: 60,
+    icerik: ["Zarf dosyalar", "Çıtçıtlı dosyalar"], anahtar: "zarf dosya umix çıtçıt dosya klasör poşet dosya" },
+  { id: "fosforlu", ad: "Fosforlu Kalemler & Markörler", kisa: "Fosforlu", kat: "kirtasiye", ada: true,
+    x: 710, y: 92, w: 120, h: 50,
+    icerik: ["Fosforlu kalemler", "Markörler (STA, GIPTA)", "Pastel tonlu kalemler"],
+    anahtar: "fosforlu kalem işaretleme kalemi markör sta gipta aurora pastel kalem tükenmez kalem" },
+  { id: "dedektif", ad: "Eğitici Oyunlar & Kitap Setleri", kisa: "Eğitici Oyun", kat: "kitap", ada: true,
+    x: 770, y: 142, w: 60, h: 418,
+    icerik: ["Dedektif kitap-oyun setleri", "Klasiklerden Seçmeler", "Eğitici oyunlar"],
+    anahtar: "dedektif klasiklerden seçmeler eğitici oyun hikaye seti zeka oyunu" },
+  { id: "roman", ad: "Romanlar & Çocuk Kitapları", kisa: "Roman · Kitap", kat: "kitap", ada: true,
+    x: 710, y: 142, w: 60, h: 418,
+    icerik: ["Gençlik romanları", "Çocuk Kalbi ve klasikler", "Hikâye kitapları"],
+    anahtar: "kitap roman gençlik romanı çocuk kalbi hikaye kitabı okuma kitabı klasik" },
+  { id: "bilimseti", ad: "Çıkartmalar & Bilim Setleri", kisa: "Çıkartma", kat: "oyuncak", ada: true,
+    x: 710, y: 560, w: 120, h: 52,
+    icerik: ["Çıkartmalar (askıda)", "Bilim ve deney setleri", "K'nex, oyuncak setler"],
+    anahtar: "çıkartma sticker bilim seti deney seti kimya knex oyuncak" },
+
+  // ---------- ADA 2 (orta) ----------
+  { id: "kitaplar", ad: "Kitaplar & Kumandalı Oyuncaklar", kisa: "Kitaplar", kat: "kitap", ada: true,
+    x: 500, y: 170, w: 100, h: 390,
+    icerik: ["Hikâye ve eğitici kitaplar", "Üst rafta: uzaktan kumandalı oyuncaklar"],
+    anahtar: "kitap hikaye kitabı eğitici kitap masal tornado" },
+  { id: "irbrixx", ad: "Buketini Tasarla (Çiçek Blokları)", kisa: "Çiçek Blok", kat: "oyuncak", ada: true,
+    x: 488, y: 560, w: 124, h: 62,
+    icerik: ["irbrixx çiçek yapı blokları", "Micro Block setleri"],
+    anahtar: "irbrixx çiçek blok buket yapı bloğu micro block" },
+
+  // ---------- ADA 3 (sol) ----------
+  { id: "boyamakitap", ad: "Boyama & Etkinlik Kitapları", kisa: "Boyama Kitabı", kat: "kitap", ada: true,
+    x: 240, y: 118, w: 140, h: 52,
+    icerik: ["Boyama kitapları", "Boyama ruloları", "Etkinlik ve çıkartma kitapları", "Masa üstü oyunlar"],
+    anahtar: "boyama kitabı boyama rulosu etkinlik kitabı çıkartma kitabı aktivite kitabı masa oyunu curling" },
+  { id: "puzzle", ad: "Yapbozlar (Puzzle)", kisa: "Puzzle", kat: "oyuncak", ada: true,
+    x: 310, y: 170, w: 70, h: 390,
+    icerik: ["Olimpia, Trefl puzzle", "1000 ve 500 parça", "Çocuk yapbozları"],
+    anahtar: "puzzle yapboz olimpia trefl 1000 parça 500 parça" },
+  { id: "rcaraba", ad: "Uzaktan Kumandalı & Oyuncak Arabalar", kisa: "RC Araba", kat: "oyuncak", ada: true,
+    x: 240, y: 170, w: 70, h: 390,
+    icerik: ["Uzaktan kumandalı arabalar", "Monster kamyonlar, iş makineleri", "Oyuncak araçlar"],
+    anahtar: "uzaktan kumandalı araba rc araba oyuncak araba monster kamyon iş makinesi" },
+
+  // ---------- ON TARAF ----------
+  { id: "kasa", ad: "Kasa & Fotokopi", kisa: "Kasa · Fotokopi", kat: "hizmet",
+    x: 670, y: 722, w: 240, h: 58,
+    icerik: ["Ödeme", "Fotokopi ve çıktı"], anahtar: "kasa ödeme fotokopi çıktı baskı tarama" },
+];
+
+const KISAYOL = ["LEGO", "Matara", "Puzzle", "Boya", "Defter", "Kalem kutusu", "Kitap", "Fon kartonu", "Hobi"];
+
+// ---------------------------------------------------------------------
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const kucuk = s => String(s || "").toLocaleLowerCase("tr-TR");
+// i/ı, ş/s gibi farklari tolere et (musteri "kalem kutusu" yerine "kalem kutsu" da yazabilir)
+const sade = s => kucuk(s).replace(/\u0307/g, "").replace(/ı/g, "i").replace(/ş/g, "s").replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ö/g, "o");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+// ---------- Krokiyi ciz ----------
+const svg = $("plan");
+el("rect", { class: "zemin", x: 2, y: 2, width: 996, height: 796, rx: 6 }, svg);
+[["Sol koridor", 155, 420], ["Koridor", 440, 420], ["Orta koridor", 655, 420], ["Sağ koridor", 875, 420]].forEach(([t, x, y]) => {
+  const k = el("text", { class: "koridor", x, y, transform: `rotate(-90 ${x} ${y})` }, svg); k.textContent = t;
+});
+const giris = el("text", { class: "koridor", x: 380, y: 752, style: "font-size:24px;font-style:normal;font-weight:700" }, svg);
+giris.textContent = "▼ Dükkânın ön tarafı / giriş";
+
+const zoneEl = {};
+for (const b of BOLGE) {
+  const g = el("g", { class: "zone" + (b.ada ? " ada" : ""), "data-id": b.id, tabindex: 0 }, svg);
+  el("rect", { x: b.x, y: b.y, width: b.w, height: b.h, fill: KATEGORI[b.kat].renk, rx: b.ada ? 6 : 2 }, g);
+  const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+  const dikey = b.h > b.w * 1.6;
+  const t = el("text", { x: cx, y: cy }, g);
+  if (dikey) t.setAttribute("transform", `rotate(-90 ${cx} ${cy})`);
+  const yer = dikey ? b.h : b.w;
+  t.textContent = b.kisa;
+  // yazi sigmazsa kucult
+  const kalinlik = dikey ? b.w : b.h;
+  const fs = Math.max(12, Math.min(30, kalinlik * 0.42, (yer - 10) / (b.kisa.length * 0.56)));
+  t.style.fontSize = fs + "px";
+  g.addEventListener("click", () => detayGoster(b));
+  g.addEventListener("keydown", e => { if (e.key === "Enter") detayGoster(b); });
+  zoneEl[b.id] = g;
+}
+const pinKatman = el("g", {}, svg);
+
+// Lejant
+$("lejant").innerHTML = Object.values(KATEGORI).map(k => `<span><b style="background:${k.renk}"></b>${k.ad}</span>`).join("");
+
+// ---------- Detay ----------
+function detayGoster(b) {
+  Object.values(zoneEl).forEach(z => z.classList.remove("secili"));
+  zoneEl[b.id].classList.add("secili");
+  const k = KATEGORI[b.kat];
+  $("detay").innerHTML = `<div class="kat" style="color:${k.renk}">${k.ad}</div>
+    <h2>${esc(b.ad)}</h2>
+    <ul>${b.icerik.map(i => `<li>${esc(i)}</li>`).join("")}</ul>`;
+}
+
+// ---------- Arama ----------
+function ara(metin) {
+  const q = sade(metin).trim();
+  svg.classList.remove("aramada");
+  Object.values(zoneEl).forEach(z => z.classList.remove("bulundu"));
+  pinKatman.innerHTML = "";
+  if (!q) { $("sonuc").innerHTML = ""; return []; }
+
+  const kelimeler = q.split(/\s+/).filter(w => w.length >= 2);
+  const sonuclar = BOLGE.map(b => {
+    const metin = sade([b.ad, b.kisa, b.anahtar, b.icerik.join(" ")].join(" "));
+    let puan = 0;
+    if (metin.includes(q)) puan += 10;                       // tam ifade
+    for (const w of kelimeler) if (metin.includes(w)) puan += w.length >= 4 ? 2 : 1;
+    // kelime koku: "mataralar" -> "matara", "puzzlelar" -> "puzzle"
+    for (const w of kelimeler) if (w.length >= 5 && metin.includes(w.slice(0, -2))) puan += 1;
+    return { b, puan };
+  }).filter(s => s.puan > 0).sort((a, c) => c.puan - a.puan);
+
+  const enIyi = sonuclar.length ? sonuclar[0].puan : 0;
+  const gosterilen = sonuclar.filter(s => s.puan >= Math.max(2, enIyi / 2)).slice(0, 4);
+
+  if (!gosterilen.length) {
+    $("sonuc").innerHTML = `<div class="bos">“${esc(metin)}” için bölge bulunamadı. Lütfen kasaya sorunuz.</div>`;
+    return [];
+  }
+  svg.classList.add("aramada");
+  gosterilen.forEach(({ b }) => {
+    zoneEl[b.id].classList.add("bulundu");
+    // ziplayan konum isareti
+    const px = b.x + b.w / 2, py = b.y + Math.min(b.h / 2, 60);
+    const p = el("g", { class: "pin" }, pinKatman);
+    el("path", { d: `M${px} ${py} l-20 -36 a23 23 0 1 1 40 0 z`, fill: "#bb1057", stroke: "#fff", "stroke-width": 3 }, p);
+    el("circle", { cx: px, cy: py - 48, r: 9, fill: "#fff" }, p);
+  });
+  $("sonuc").innerHTML = `Burada bakın:<ul>${gosterilen.map(({ b }) =>
+    `<li data-id="${b.id}" style="background:${KATEGORI[b.kat].renk}">📍 ${esc(b.ad)}</li>`).join("")}</ul>`;
+  $("sonuc").querySelectorAll("li").forEach(li => li.onclick = () => detayGoster(BOLGE.find(x => x.id === li.dataset.id)));
+  detayGoster(gosterilen[0].b);
+  $("plan").scrollIntoView({ behavior: "smooth", block: "center" });
+  return gosterilen;
+}
+
+$("form").addEventListener("submit", e => { e.preventDefault(); ara($("q").value); $("q").blur(); });
+$("chips").innerHTML = KISAYOL.map(k => `<button type="button" class="chip">${k}</button>`).join("");
+$("chips").querySelectorAll(".chip").forEach(c => c.onclick = () => { $("q").value = c.textContent; ara(c.textContent); });
+
+// Baska sayfadan link: kroki.html?ara=matara
+const p = new URLSearchParams(location.search).get("ara");
+if (p) { $("q").value = p; setTimeout(() => ara(p), 100); }
+</script>
+</body>
+</html>
