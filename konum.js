@@ -14,7 +14,7 @@
    ===================================================================== */
 
 const DUKKAN = {
-  enlem: 40,027836,        // ornek: 41.0082   (kurulum modunda cikan deger)
+  enlem: 40.027836,        // ornek: 41.0082   (kurulum modunda cikan deger)
   boylam:27.047282,       // ornek: 28.9784
   yaricap: 120,       // metre - bu mesafenin icindekiler "dukkanda" sayilir
 };
